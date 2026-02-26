@@ -6,7 +6,6 @@ from io import StringIO
 # ============================================
 # CONFIGURATION - UPDATE THESE URLS
 # ============================================
-CSV_URL = 'https://raw.githubusercontent.com/jonathanlau97/airaliprizepool/main/airali_sales.csv'
 CSV_URL = 'https://raw.githubusercontent.com/jonathanlau97/caudalieprizepool/main/caudalie_sales.csv'
 # ============================================
 
@@ -307,9 +306,8 @@ def main():
                     <div class="glass-card podium-card {rank_class}">
                         <div class="podium-rank">{actual_rank}</div>
                         <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; line-height: 1.3;">{row['Crew_Name']}</div>
-                        <div style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Total Sales</div>
+                        <div style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Total Sales (MYR)</div>
                         <div style="font-size: 2rem; font-weight: 800;">{int(row['crew_sold_quantity']):,}</div>
-                        <div style="font-size: 0.65rem; opacity: 0.65;">MYR</div>
                     </div>
                     """, unsafe_allow_html=True)
                     st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
