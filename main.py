@@ -6,7 +6,7 @@ from io import StringIO
 # ============================================
 # CONFIGURATION - UPDATE THESE URLS
 # ============================================
-CSV_URL = 'https://raw.githubusercontent.com/jonathanlau97/airaliprizepool/main/airali_sales.csv'
+CSV_URL = 'https://raw.githubusercontent.com/jonathanlau97/caudalieprizepool/main/caudalie_sales.csv'
 # ============================================
 
 # --- Page Configuration ---
