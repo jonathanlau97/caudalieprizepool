@@ -195,12 +195,17 @@ def load_csv_from_github(url):
 
 # --- Process Data ---
 def process_sales_data(df):
+    # Individual crew contribution = their share of the flight x total bottles sold on flight
+    df = df.copy()
+    df['individual_sold'] = df['Bottles_Sold_on_Flight'] * df['crew_sold_quantity']
+
     aggregated = df.groupby(['Airline_Code', 'Crew_ID', 'Crew_Name']).agg({
-        'crew_sold_quantity': 'sum'
+        'individual_sold': 'sum'
     }).reset_index()
-    
+    aggregated = aggregated.rename(columns={'individual_sold': 'crew_sold_quantity'})
+
     aggregated = aggregated.sort_values(['Airline_Code', 'crew_sold_quantity'], ascending=[True, False])
-    
+
     return aggregated
 
 # --- Main App ---
@@ -289,7 +294,7 @@ def main():
                                 <div class="podium-rank">{actual_rank}</div>
                                 <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; line-height: 1.3;">{row['Crew_Name']}</div>
                                 <div style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Total Sales</div>
-                                <div style="font-size: 2rem; font-weight: 800;">{int(row['crew_sold_quantity']):,}</div>
+                                <div style="font-size: 2rem; font-weight: 800;">RM {int(row['crew_sold_quantity']):,}</div>
                             </div>
                             """, unsafe_allow_html=True)
                 
@@ -306,7 +311,7 @@ def main():
                         <div class="podium-rank">{actual_rank}</div>
                         <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; line-height: 1.3;">{row['Crew_Name']}</div>
                         <div style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Total Sales</div>
-                        <div style="font-size: 2rem; font-weight: 800;">{int(row['crew_sold_quantity']):,}</div>
+                        <div style="font-size: 2rem; font-weight: 800;">RM {int(row['crew_sold_quantity']):,}</div>
                     </div>
                     """, unsafe_allow_html=True)
                     st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
@@ -328,8 +333,8 @@ def main():
                             </div>
                         </div>
                         <div style="text-align: right; margin-top: 0.5rem;">
-                            <div style="font-size: 1.25rem; font-weight: 700;">{int(crew['crew_sold_quantity']):,}</div>
-                            <div style="font-size: 0.65rem; opacity: 0.65;">bottles</div>
+                            <div style="font-size: 1.25rem; font-weight: 700;">RM {int(crew['crew_sold_quantity']):,}</div>
+                            <div style="font-size: 0.65rem; opacity: 0.65;">crew_sold_quantity</div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
