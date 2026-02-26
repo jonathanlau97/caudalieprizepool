@@ -291,6 +291,7 @@ def main():
                                 <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; line-height: 1.3;">{row['Crew_Name']}</div>
                                 <div style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Total Sales</div>
                                 <div style="font-size: 2rem; font-weight: 800;">{int(row['crew_sold_quantity']):,}</div>
+                                
                             </div>
                             """, unsafe_allow_html=True)
 
@@ -308,6 +309,7 @@ def main():
                         <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; line-height: 1.3;">{row['Crew_Name']}</div>
                         <div style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Total Sales</div>
                         <div style="font-size: 2rem; font-weight: 800;">{int(row['crew_sold_quantity']):,}</div>
+                        <div style="font-size: 0.65rem; opacity: 0.65;">MYR</div>
                     </div>
                     """, unsafe_allow_html=True)
                     st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
@@ -330,7 +332,7 @@ def main():
                         </div>
                         <div style="text-align: right; margin-top: 0.5rem;">
                             <div style="font-size: 1.25rem; font-weight: 700;">{int(crew['crew_sold_quantity']):,}</div>
-                            <div style="font-size: 0.65rem; opacity: 0.65;">bottles</div>
+                            <div style="font-size: 0.65rem; opacity: 0.65;">MYR</div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
