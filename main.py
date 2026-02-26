@@ -7,8 +7,6 @@ from io import StringIO
 # CONFIGURATION - UPDATE THESE URLS
 # ============================================
 CSV_URL = 'https://raw.githubusercontent.com/jonathanlau97/airaliprizepool/main/airali_sales.csv'
-DESKTOP_BG_URL = 'https://raw.githubusercontent.com/jonathanlau97/airaliprizepool/main/AIRALI_DESKTOP.jpg'
-MOBILE_BG_URL = 'https://raw.githubusercontent.com/jonathanlau97/airaliprizepool/main/AIRALI_MOBILE.jpg'
 # ============================================
 
 # --- Page Configuration ---
@@ -19,39 +17,16 @@ st.set_page_config(
 )
 
 # --- Background CSS ---
-def apply_background_css(desktop_bg_url, mobile_bg_url):
-    use_custom_bg = not desktop_bg_url.startswith('https://raw.githubusercontent.com/YOUR_USERNAME')
-    
-    if use_custom_bg:
-        bg_css = f"""
-        <style>
-            .stApp {{
-                background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('{desktop_bg_url}');
-                background-size: cover;
-                background-position: center;
-                background-repeat: no-repeat;
-                background-attachment: fixed;
-                min-height: 100vh;
-            }}
-            
-            @media (max-width: 768px) {{
-                .stApp {{
-                    background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('{mobile_bg_url}');
-                    background-attachment: scroll;
-                }}
-            }}
-        </style>
-        """
-    else:
-        bg_css = """
-        <style>
-            .stApp {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
-            }
-        </style>
-        """
-    
+def apply_background_css():
+    bg_css = """
+    <style>
+        .stApp {
+            background: linear-gradient(135deg, #0d4f4f 0%, #0a7a7a 25%, #00b3b3 55%, #00cccc 75%, #004d4d 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+    </style>
+    """
     st.markdown(bg_css, unsafe_allow_html=True)
 
 # Apply custom CSS for glassmorphism
@@ -220,20 +195,17 @@ def load_csv_from_github(url):
 
 # --- Process Data ---
 def process_sales_data(df):
-    # Clean column names (remove leading/trailing spaces)
-    df.columns = df.columns.str.strip()
-    
     aggregated = df.groupby(['Airline_Code', 'Crew_ID', 'Crew_Name']).agg({
-        'TotalSales': 'sum'
+        'crew_sold_quantity': 'sum'
     }).reset_index()
     
-    aggregated = aggregated.sort_values(['Airline_Code', 'TotalSales'], ascending=[True, False])
+    aggregated = aggregated.sort_values(['Airline_Code', 'crew_sold_quantity'], ascending=[True, False])
     
     return aggregated
 
 # --- Main App ---
 def main():
-    apply_background_css(DESKTOP_BG_URL, MOBILE_BG_URL)
+    apply_background_css()
     apply_custom_css()
     
     # Header
@@ -317,7 +289,7 @@ def main():
                                 <div class="podium-rank">{actual_rank}</div>
                                 <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; line-height: 1.3;">{row['Crew_Name']}</div>
                                 <div style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Total Sales</div>
-                                <div style="font-size: 2rem; font-weight: 800;">{int(row['TotalSales']):,}</div>
+                                <div style="font-size: 2rem; font-weight: 800;">{int(row['crew_sold_quantity']):,}</div>
                             </div>
                             """, unsafe_allow_html=True)
                 
@@ -334,7 +306,7 @@ def main():
                         <div class="podium-rank">{actual_rank}</div>
                         <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; line-height: 1.3;">{row['Crew_Name']}</div>
                         <div style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Total Sales</div>
-                        <div style="font-size: 2rem; font-weight: 800;">{int(row['TotalSales']):,}</div>
+                        <div style="font-size: 2rem; font-weight: 800;">{int(row['crew_sold_quantity']):,}</div>
                     </div>
                     """, unsafe_allow_html=True)
                     st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
@@ -356,8 +328,8 @@ def main():
                             </div>
                         </div>
                         <div style="text-align: right; margin-top: 0.5rem;">
-                            <div style="font-size: 1.25rem; font-weight: 700;">{int(crew['TotalSales']):,}</div>
-                            <div style="font-size: 0.65rem; opacity: 0.65;">sales</div>
+                            <div style="font-size: 1.25rem; font-weight: 700;">{int(crew['crew_sold_quantity']):,}</div>
+                            <div style="font-size: 0.65rem; opacity: 0.65;">bottles</div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
