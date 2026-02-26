@@ -11,7 +11,7 @@ CSV_URL = 'https://raw.githubusercontent.com/jonathanlau97/caudalieprizepool/mai
 
 # --- Page Configuration ---
 st.set_page_config(
-    page_title="Airali : Crew Sales Performance",
+    page_title="Caudalie : Crew Sales Performance",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -212,7 +212,7 @@ def main():
     st.markdown("""
     <div style='text-align: center; padding: 1.5rem 0 0.5rem 0;'>
         <h1 style='font-size: 2.75rem; font-weight: 700; margin: 0;'>
-            Airali : Crew Sales Performance
+            Caudalie : Crew Sales Performance
         </h1>
     </div>
     """, unsafe_allow_html=True)
