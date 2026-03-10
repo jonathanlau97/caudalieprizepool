@@ -12,8 +12,8 @@ CSV_URL = 'https://raw.githubusercontent.com/jonathanlau97/caudalieprizepool/mai
 # Replace these with your actual raw GitHub image URLs
 # Format: https://raw.githubusercontent.com/USER/REPO/BRANCH/PATH/image.jpg
 
-DESKTOP_BG_URL = 'https://raw.githubusercontent.com/jonathanlau97/caudalieprizepool/main/backgrounds/desktop_bg.jpg'
-MOBILE_BG_URL  = 'https://raw.githubusercontent.com/jonathanlau97/caudalieprizepool/main/backgrounds/mobile_bg.jpg'
+DESKTOP_BG_URL = 'https://raw.githubusercontent.com/jonathanlau97/caudalieprizepool/main/backgrounds/desktop_bg.jpeg'
+MOBILE_BG_URL  = 'https://raw.githubusercontent.com/jonathanlau97/caudalieprizepool/main/backgrounds/mobile_bg.jpeg'
 
 # Breakpoint (px) below which mobile background is used
 MOBILE_BREAKPOINT = 768
