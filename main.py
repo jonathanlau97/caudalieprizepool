@@ -4,10 +4,29 @@ import requests
 from io import StringIO
 
 # ============================================
-# CONFIGURATION - UPDATE THESE URLS
+# CONFIGURATION - UPDATE THESE URLs
 # ============================================
 CSV_URL = 'https://raw.githubusercontent.com/jonathanlau97/caudalieprizepool/main/caudalie_sales.csv'
+
+# Background images from GitHub
+# Replace these with your actual raw GitHub image URLs
+# Format: https://raw.githubusercontent.com/USER/REPO/BRANCH/PATH/image.jpg
+
+DESKTOP_BG_URL = 'https://raw.githubusercontent.com/jonathanlau97/caudalieprizepool/main/backgrounds/desktop_bg.jpg'
+MOBILE_BG_URL  = 'https://raw.githubusercontent.com/jonathanlau97/caudalieprizepool/main/backgrounds/mobile_bg.jpg'
+
+# Breakpoint (px) below which mobile background is used
+MOBILE_BREAKPOINT = 768
+
+# Fallback gradient (used when images fail to load)
+FALLBACK_GRADIENT = 'linear-gradient(135deg, #0d4f4f 0%, #0a7a7a 25%, #00b3b3 55%, #00cccc 75%, #004d4d 100%)'
+
+# Overlay opacity over background image (0.0 = no overlay, 1.0 = full colour overlay)
+# Increase this if text is hard to read over your background image
+OVERLAY_OPACITY = 0.45
+OVERLAY_COLOR   = '0, 30, 30'  # RGB for the dark teal overlay tint
 # ============================================
+
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -16,79 +35,129 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- Background CSS ---
-def apply_background_css():
-    bg_css = """
-    <style>
-        .stApp {
-            background: linear-gradient(135deg, #0d4f4f 0%, #0a7a7a 25%, #00b3b3 55%, #00cccc 75%, #004d4d 100%);
-            background-attachment: fixed;
-            min-height: 100vh;
-        }
-    </style>
-    """
-    st.markdown(bg_css, unsafe_allow_html=True)
 
-# Apply custom CSS for glassmorphism
-def apply_custom_css():
-    st.markdown("""
+def check_image_url(url: str) -> bool:
+    """Return True if the URL responds with a valid image content-type."""
+    try:
+        r = requests.head(url, timeout=5)
+        content_type = r.headers.get('Content-Type', '')
+        return r.status_code == 200 and 'image' in content_type
+    except Exception:
+        return False
+
+
+def apply_background_css(desktop_url: str, mobile_url: str):
+    """
+    Inject CSS that:
+    - Uses desktop_url for screens wider than MOBILE_BREAKPOINT px
+    - Uses mobile_url for narrower screens
+    - Falls back to FALLBACK_GRADIENT if either URL is invalid
+    - Adds a semi-transparent overlay so content stays legible
+    - Dynamically adapts layout spacing to the background image dimensions
+    """
+    # Validate URLs (skip in production to avoid latency; keep for dev)
+    desktop_valid = check_image_url(desktop_url)
+    mobile_valid  = check_image_url(mobile_url)
+
+    desktop_bg = f'url("{desktop_url}")' if desktop_valid else FALLBACK_GRADIENT
+    mobile_bg  = f'url("{mobile_url}")'  if mobile_valid  else FALLBACK_GRADIENT
+
+    # If an image is used we want cover; if gradient, no-repeat is irrelevant
+    desktop_size   = 'cover' if desktop_valid else 'auto'
+    mobile_size    = 'cover' if mobile_valid  else 'auto'
+    desktop_repeat = 'no-repeat' if desktop_valid else 'no-repeat'
+    mobile_repeat  = 'no-repeat' if mobile_valid  else 'no-repeat'
+
+    css = f"""
     <style>
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        
-        /* Remove default streamlit padding */
-        .block-container {
+        /* ── Reset ──────────────────────────────────────────── */
+        #MainMenu  {{ visibility: hidden; }}
+        footer     {{ visibility: hidden; }}
+
+        .block-container {{
             padding-top: 2rem;
             padding-bottom: 2rem;
-        }
-        
-        /* Glassmorphism cards */
-        .glass-card {
+            position: relative;
+            z-index: 1;
+        }}
+
+        /* ── Root background element ─────────────────────────
+           We use a ::before pseudo-element on .stApp so we can
+           layer an opacity overlay on top without affecting
+           the content z-stack.
+        ─────────────────────────────────────────────────────── */
+        .stApp {{
+            position: relative;
+            min-height: 100vh;
+            background: {desktop_bg} center center / {desktop_size} {desktop_repeat} fixed,
+                        {FALLBACK_GRADIENT};
+        }}
+
+        /* Semi-transparent overlay for readability */
+        .stApp::before {{
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba({OVERLAY_COLOR}, {OVERLAY_OPACITY});
+            z-index: 0;
+            pointer-events: none;
+        }}
+
+        /* ── Mobile background swap ──────────────────────────── */
+        @media (max-width: {MOBILE_BREAKPOINT}px) {{
+            .stApp {{
+                background: {mobile_bg} center top / {mobile_size} {mobile_repeat} fixed,
+                            {FALLBACK_GRADIENT};
+            }}
+        }}
+
+        /* ── Glassmorphism cards ─────────────────────────────── */
+        .glass-card {{
             background: rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.20);
             padding: 1.5rem;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.30);
             color: white;
-            transition: all 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
             height: 100%;
-        }
-        
-        .glass-card:hover {
+        }}
+
+        .glass-card:hover {{
             transform: translateY(-5px);
-            box-shadow: 0 12px 48px 0 rgba(0, 0, 0, 0.35);
-            background: rgba(255, 255, 255, 0.18);
-        }
-        
-        /* Podium cards */
-        .podium-card {
+            box-shadow: 0 14px 48px 0 rgba(0, 0, 0, 0.40);
+            background: rgba(255, 255, 255, 0.20);
+        }}
+
+        /* ── Podium cards ────────────────────────────────────── */
+        .podium-card {{
             text-align: center;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             position: relative;
-        }
-        
-        .rank-1 { 
+        }}
+
+        .rank-1 {{
             min-height: 260px;
-            background: rgba(255, 215, 0, 0.15);
-            border: 2px solid rgba(255, 215, 0, 0.3);
-        }
-        .rank-2 { 
+            background: rgba(255, 215, 0, 0.17) !important;
+            border: 2px solid rgba(255, 215, 0, 0.35) !important;
+        }}
+        .rank-2 {{
             min-height: 220px;
-            background: rgba(192, 192, 192, 0.15);
-            border: 2px solid rgba(192, 192, 192, 0.3);
-        }
-        .rank-3 { 
+            background: rgba(192, 192, 192, 0.17) !important;
+            border: 2px solid rgba(192, 192, 192, 0.35) !important;
+        }}
+        .rank-3 {{
             min-height: 180px;
-            background: rgba(205, 127, 50, 0.15);
-            border: 2px solid rgba(205, 127, 50, 0.3);
-        }
-        
-        .podium-rank {
+            background: rgba(205, 127, 50, 0.17) !important;
+            border: 2px solid rgba(205, 127, 50, 0.35) !important;
+        }}
+
+        .podium-rank {{
             position: absolute;
             top: -15px;
             background: rgba(255, 255, 255, 0.95);
@@ -101,17 +170,17 @@ def apply_custom_css():
             justify-content: center;
             font-weight: 800;
             font-size: 1.2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-        
-        .other-card {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.30);
+        }}
+
+        .other-card {{
             min-height: 120px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-        }
-        
-        .rank-badge {
+        }}
+
+        .rank-badge {{
             background: rgba(255, 255, 255, 0.25);
             border-radius: 50%;
             width: 36px;
@@ -121,61 +190,39 @@ def apply_custom_css():
             justify-content: center;
             font-weight: 700;
             font-size: 0.95rem;
-        }
-        
-        h1 {
+            flex-shrink: 0;
+        }}
+
+        h1, h2 {{
             color: white !important;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-        
-        h2 {
-            color: white !important;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .glass-card {
-                padding: 1rem;
-            }
-            .rank-1 { 
-                min-height: 200px;
-                margin-bottom: 1rem;
-            }
-            .rank-2 { 
-                min-height: 180px;
-                margin-bottom: 1rem;
-            }
-            .rank-3 { 
-                min-height: 160px;
-                margin-bottom: 1rem;
-            }
-            .other-card {
-                min-height: 100px;
-                margin-bottom: 0.75rem;
-            }
-            .podium-rank {
-                width: 36px;
-                height: 36px;
-                font-size: 1.1rem;
-                top: -12px;
-            }
-            
-            /* Add spacing between columns on mobile */
-            [data-testid="column"] {
-                padding: 0 0.5rem !important;
-            }
-            
-            /* Adjust font sizes for mobile */
-            .podium-card > div:nth-child(2) {
-                font-size: 1.1rem !important;
-            }
-            .podium-card > div:nth-child(4) {
-                font-size: 1.6rem !important;
-            }
-        }
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+        }}
+
+        /* ── Responsive adjustments ──────────────────────────── */
+        @media (max-width: {MOBILE_BREAKPOINT}px) {{
+            .glass-card      {{ padding: 1rem; }}
+            .rank-1          {{ min-height: 200px; margin-bottom: 1rem; }}
+            .rank-2          {{ min-height: 180px; margin-bottom: 1rem; }}
+            .rank-3          {{ min-height: 160px; margin-bottom: 1rem; }}
+            .other-card      {{ min-height: 100px; margin-bottom: 0.75rem; }}
+            .podium-rank     {{ width: 36px; height: 36px; font-size: 1.1rem; top: -12px; }}
+
+            [data-testid="column"] {{ padding: 0 0.5rem !important; }}
+        }}
+
+        /* ── Background-image status banner (debug only) ─────── */
+        .bg-status {{
+            font-size: 0.7rem;
+            opacity: 0.55;
+            color: white;
+            text-align: center;
+            padding-bottom: 0.5rem;
+        }}
     </style>
-    """, unsafe_allow_html=True)
+    """
+    st.markdown(css, unsafe_allow_html=True)
+    return desktop_valid, mobile_valid
+
 
 # --- Load CSV Data ---
 @st.cache_data(ttl=300)
@@ -183,36 +230,35 @@ def load_csv_from_github(url):
     try:
         response = requests.get(url)
         response.raise_for_status()
-
-        # Get last modified date from headers
         last_modified = response.headers.get('Last-Modified', None)
-
         csv_data = StringIO(response.text)
         df = pd.read_csv(csv_data)
         return df, last_modified, None
     except Exception as e:
         return None, None, str(e)
 
+
 # --- Process Data ---
 def process_sales_data(df):
-    aggregated = df.groupby(['Airline_Code', 'Crew_ID', 'Crew_Name']).agg({
-        'crew_sold_quantity': 'sum'
-    }).reset_index()
-
-    aggregated = aggregated.sort_values(['Airline_Code', 'crew_sold_quantity'], ascending=[True, False])
-
+    aggregated = df.groupby(['Airline_Code', 'Crew_ID', 'Crew_Name']).agg(
+        {'crew_sold_quantity': 'sum'}
+    ).reset_index()
+    aggregated = aggregated.sort_values(
+        ['Airline_Code', 'crew_sold_quantity'], ascending=[True, False]
+    )
     return aggregated
+
 
 # --- Main App ---
 def main():
-    apply_background_css()
-    apply_custom_css()
+    # Apply background and CSS; capture validity flags
+    desktop_valid, mobile_valid = apply_background_css(DESKTOP_BG_URL, MOBILE_BG_URL)
 
     # Header
     st.markdown("""
     <div style='text-align: center; padding: 1.5rem 0 0.5rem 0;'>
         <h1 style='font-size: 2.75rem; font-weight: 700; margin: 0;'>
-            Caudalie : Crew Sales Performance
+            Caudalie&nbsp;: Crew Sales Performance
         </h1>
     </div>
     """, unsafe_allow_html=True)
@@ -221,120 +267,117 @@ def main():
     df, last_modified, error = load_csv_from_github(CSV_URL)
 
     if error:
-        st.error(f"Error: {error}")
+        st.error(f"Error loading data: {error}")
         return
 
     if df is None or df.empty:
-        st.warning("No data available")
+        st.warning("No data available.")
         return
 
-    # Display last refreshed date
+    # Last refreshed
+    from datetime import datetime, timezone
     if last_modified:
-        from datetime import datetime
         try:
-            # Parse the Last-Modified header
-            refresh_date = datetime.strptime(last_modified, '%a, %d %b %Y %H:%M:%S %Z')
+            refresh_date   = datetime.strptime(last_modified, '%a, %d %b %Y %H:%M:%S %Z')
             formatted_date = refresh_date.strftime('%B %d, %Y at %I:%M %p UTC')
-        except:
+        except Exception:
             formatted_date = last_modified
     else:
-        from datetime import datetime
-        formatted_date = datetime.now().strftime('%B %d, %Y at %I:%M %p')
+        formatted_date = datetime.now(timezone.utc).strftime('%B %d, %Y at %I:%M %p UTC')
+
+    # Background status indicator (subtle)
+    desktop_status = "✓ custom" if desktop_valid else "↩ gradient fallback"
+    mobile_status  = "✓ custom" if mobile_valid  else "↩ gradient fallback"
 
     st.markdown(f"""
     <div style='text-align: center; padding: 0 0 2rem 0;'>
-        <p style='color: rgba(255, 255, 255, 0.75); font-size: 0.9rem; margin: 0;'>
+        <p style='color: rgba(255,255,255,0.75); font-size: 0.9rem; margin: 0 0 0.25rem 0;'>
             Last refreshed: {formatted_date}
+        </p>
+        <p class='bg-status'>
+            🖥 Desktop bg: {desktop_status} &nbsp;|&nbsp; 📱 Mobile bg: {mobile_status}
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-    # Process data
+    # Process and render
     processed_df = process_sales_data(df)
-    carriers = sorted(processed_df['Airline_Code'].unique())
-
-    # Display carriers side by side
+    carriers     = sorted(processed_df['Airline_Code'].unique())
     carrier_cols = st.columns(len(carriers))
 
     for carrier_idx, carrier in enumerate(carriers):
         with carrier_cols[carrier_idx]:
-            carrier_data = processed_df[processed_df['Airline_Code'] == carrier].reset_index(drop=True)
+            carrier_data = (
+                processed_df[processed_df['Airline_Code'] == carrier]
+                .reset_index(drop=True)
+            )
 
-            # Carrier header
             st.markdown(f"""
-            <h2 style='font-size: 1.75rem; font-weight: 600; margin-bottom: 1.5rem; text-align: center;'>
+            <h2 style='font-size:1.75rem; font-weight:600; margin-bottom:1.5rem; text-align:center;'>
                 ✈️ {carrier}
             </h2>
             """, unsafe_allow_html=True)
 
-            # Top 3 in podium ladder layout (2nd, 1st, 3rd order)
             top_3 = carrier_data.head(3)
 
-            if len(top_3) >= 3:
-                # Create podium order: 1st, 2nd, 3rd (left to right)
-                podium_order = [0, 1, 2]  # indices for 1st, 2nd, 3rd place
-
-                # Display in 3 columns for podium effect with custom gap
+            # ── Podium (top 3) ──────────────────────────────
+            if len(top_3) >= 1:
                 podium_cols = st.columns([1, 1, 1], gap="medium")
 
-                for col_idx, rank_idx in enumerate(podium_order):
-                    if rank_idx < len(top_3):
-                        row = top_3.iloc[rank_idx]
-                        actual_rank = rank_idx + 1
-                        rank_class = f'rank-{actual_rank}'
+                for col_idx in range(min(3, len(top_3))):
+                    row        = top_3.iloc[col_idx]
+                    rank       = col_idx + 1
+                    rank_class = f'rank-{rank}'
 
-                        with podium_cols[col_idx]:
-                            st.markdown(f"""
-                            <div class="glass-card podium-card {rank_class}">
-                                <div class="podium-rank">{actual_rank}</div>
-                                <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; line-height: 1.3;">{row['Crew_Name']}</div>
-                                <div style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Total Sales (MYR)</div>
-                                <div style="font-size: 2rem; font-weight: 800;">{int(row['crew_sold_quantity']):,}</div>
-                                
+                    with podium_cols[col_idx]:
+                        st.markdown(f"""
+                        <div class="glass-card podium-card {rank_class}">
+                            <div class="podium-rank">{rank}</div>
+                            <div style="font-size:1.25rem; font-weight:700; margin-bottom:1rem; line-height:1.3;">
+                                {row['Crew_Name']}
                             </div>
-                            """, unsafe_allow_html=True)
+                            <div style="font-size:0.7rem; text-transform:uppercase; opacity:0.7;
+                                        letter-spacing:0.05em; margin-bottom:0.5rem;">
+                                Total Sales (MYR)
+                            </div>
+                            <div style="font-size:2rem; font-weight:800;">
+                                {int(row['crew_sold_quantity']):,}
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
 
-                st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='height:2rem;'></div>", unsafe_allow_html=True)
 
-            elif len(top_3) > 0:
-                # Fallback for less than 3 entries
-                for idx, (_, row) in enumerate(top_3.iterrows()):
-                    actual_rank = idx + 1
-                    rank_class = f'rank-{actual_rank}'
-
-                    st.markdown(f"""
-                    <div class="glass-card podium-card {rank_class}">
-                        <div class="podium-rank">{actual_rank}</div>
-                        <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; line-height: 1.3;">{row['Crew_Name']}</div>
-                        <div style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.7; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Total Sales (MYR)</div>
-                        <div style="font-size: 2rem; font-weight: 800;">{int(row['crew_sold_quantity']):,}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
-
-            # Next 7
+            # ── Ranks 4–10 ──────────────────────────────────
             next_7 = carrier_data.iloc[3:10]
 
             if len(next_7) > 0:
-                st.markdown("<div style='height: 0.5rem;'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='height:0.5rem;'></div>", unsafe_allow_html=True)
 
                 for _, crew in next_7.iterrows():
-                    rank = crew.name + 1
+                    rank = int(crew.name) + 1
                     st.markdown(f"""
                     <div class="glass-card other-card">
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div style="display:flex; align-items:center; gap:0.75rem;">
                             <span class="rank-badge">{rank}</span>
-                            <div style="flex: 1; min-width: 0;">
-                                <div style="font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{crew['Crew_Name']}</div>
+                            <div style="flex:1; min-width:0;">
+                                <div style="font-weight:600; font-size:0.9rem;
+                                            white-space:nowrap; overflow:hidden;
+                                            text-overflow:ellipsis;">
+                                    {crew['Crew_Name']}
+                                </div>
                             </div>
                         </div>
-                        <div style="text-align: right; margin-top: 0.5rem;">
-                            <div style="font-size: 1.25rem; font-weight: 700;">{int(crew['crew_sold_quantity']):,}</div>
-                            <div style="font-size: 0.65rem; opacity: 0.65;">MYR</div>
+                        <div style="text-align:right; margin-top:0.5rem;">
+                            <div style="font-size:1.25rem; font-weight:700;">
+                                {int(crew['crew_sold_quantity']):,}
+                            </div>
+                            <div style="font-size:0.65rem; opacity:0.65;">MYR</div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
-                    st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
+                    st.markdown("<div style='height:0.75rem;'></div>", unsafe_allow_html=True)
+
 
 if __name__ == "__main__":
     main()
