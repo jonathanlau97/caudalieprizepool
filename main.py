@@ -285,17 +285,10 @@ def main():
     else:
         formatted_date = datetime.now(timezone.utc).strftime('%B %d, %Y at %I:%M %p UTC')
 
-    # Background status indicator (subtle)
-    desktop_status = "✓ custom" if desktop_valid else "↩ gradient fallback"
-    mobile_status  = "✓ custom" if mobile_valid  else "↩ gradient fallback"
-
     st.markdown(f"""
     <div style='text-align: center; padding: 0 0 2rem 0;'>
-        <p style='color: rgba(255,255,255,0.75); font-size: 0.9rem; margin: 0 0 0.25rem 0;'>
+        <p style='color: rgba(255,255,255,0.75); font-size: 0.9rem; margin: 0;'>
             Last refreshed: {formatted_date}
-        </p>
-        <p class='bg-status'>
-            🖥 Desktop bg: {desktop_status} &nbsp;|&nbsp; 📱 Mobile bg: {mobile_status}
         </p>
     </div>
     """, unsafe_allow_html=True)
